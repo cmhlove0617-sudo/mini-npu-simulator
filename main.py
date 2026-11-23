@@ -169,12 +169,28 @@ def performance_test(data=None):
     for n in [3, 5, 13, 25]:
 
         if n == 3:
-            pattern = cross
-            filter_data = cross
+            # 3x3은 테스트용 십자가 행렬 사용
+            pattern = [
+                [0, 1, 0],
+                [1, 1, 1],
+                [0, 1, 0]
+            ]
+            filter_data = pattern
 
         elif data is not None and f"size_{n}" in data["filters"]:
             filters = data["filters"][f"size_{n}"]
-            filter_data = filters["cross"]
+
+            # cross, Cross, + 필터 키 모두 허용
+            cross_keys = [
+                key for key in filters
+                if str(key).strip().lower() in ("cross", "+")
+            ]
+
+            if not cross_keys:
+                print(f"{n}x{n}: Cross 필터를 찾을 수 없습니다.")
+                continue
+
+            filter_data = filters[cross_keys[0]]
             pattern = filter_data
 
         else:
@@ -193,7 +209,6 @@ def performance_test(data=None):
 
         except (ValueError, TypeError) as error:
             print(f"{n}x{n}: 측정 실패 - {error}")
-
 
 # ========================================
 # 9. 사용자 입력 모드
@@ -217,7 +232,7 @@ def user_mode():
     print("\n=== MAC 계산 결과 ===")
     print("A 점수:", score_a)
     print("B 점수:", score_b)
-    print("최종 판정:", result)
+    print("최종 판정:", "판정 불가" if result == "UNDECIDED" else result)
 
     average = measure_time(pattern, filter_a)
     print(f"3x3 평균 연산 시간: {average:.6f} ms")
@@ -294,8 +309,24 @@ def json_mode():
             if not isinstance(filters, dict):
                 raise ValueError("필터 구조 오류")
 
-            cross_filter = filters["cross"]
-            x_filter = filters["x"]
+
+            # 필터 키 정규화: cross, Cross, + 등을 허용
+            normalized_filters = {}
+
+            for key, value in filters.items():
+                normalized_key = str(key).strip().lower()
+
+                if normalized_key in ("cross", "+"):
+                    normalized_filters["cross"] = value
+                elif normalized_key == "x":
+                    normalized_filters["x"] = value
+
+            if "cross" not in normalized_filters or "x" not in normalized_filters:
+                raise ValueError("필터 키 오류: cross(Cross, +)와 x(X)가 필요합니다")
+
+            cross_filter = normalized_filters["cross"]
+            x_filter = normalized_filters["x"]
+
 
             # 패턴 및 정답 가져오기
             pattern = case["input"]
