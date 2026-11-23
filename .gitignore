@@ -1,0 +1,16 @@
+
+# Python 임시 파일
+__pycache__/
+*.pyc
+
+# 테스트 및 백업 파일
+test_backup/
+data_backup.json
+data_schema_test.json
+
+# 가상환경
+.venv/
+venv/
+
+# 편집기 설정
+.vscode/
